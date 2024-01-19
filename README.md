@@ -1,7 +1,7 @@
 # Need For Sleep Car Game
 
 ## Description
-Need For Sleep is an immersive 2D car racing game built in Python. It allows players to experience the thrill of car racing LOL, including buying and selling cars, tuning, and racing on various tracks. The game features a selection of cars each with unique attributes and capabilities.
+Need For Sleep is an immersive 2D car racing game built in Python. It allows players to experience the thrill of car racing, including buying and selling cars, tuning, and racing on various tracks. The game features a selection of cars each with unique attributes and capabilities.
 
 ## Educational Context
 This project was developed as part of our coursework at Digital Career Institute (DCI). It provided us with a hands-on opportunity to apply our programming skills in a practical project and learn collaboratively. We thank DCI for their guidance and support throughout this project.
