@@ -1,28 +1,65 @@
 import pygame
 import time
 import pygame.mixer
+import random
 
-# import random
+class OtherCar:
+    def __init__(self, game, x, y, speed, img_path):
+        self.game = game
+        self.scale_factor = 1
+        self.x = x
+        self.y = y
+        self.speed = speed
+        self.x = random.randrange(228 + game.car_width * game.scale_factor, 849 - game.car_width * game.scale_factor)
+        self.img = pygame.transform.scale(
+            pygame.image.load(img_path),
+            (
+                int(game.car_width * game.scale_factor),
+                int(game.car_height * game.scale_factor),
+            ),
+        )
 
+    def move(self):
+        self.y += self.speed
+        if self.y > self.game.display_height:
+            self.y = 0 - self.game.car_width * self.game.scale_factor
+            self.speed = random.randrange(1, 2)
+            while True:
+                self.x = random.randrange(228 + self.game.car_width * self.game.scale_factor, 849 - self.game.car_width * self.game.scale_factor)
+                if not any(self.get_rect().colliderect(other_car.get_rect()) for other_car in self.game.other_cars if other_car != self):
+                    break
+                
+    def get_rect(self):
+        return pygame.Rect(self.x, self.y, self.game.car_width, self.game.car_height)
+
+
+    def draw(self, gamedisplay):
+        gamedisplay.blit(self.img, (self.x, self.y))
 
 class Game:
     def __init__(self):
         pygame.init()
-        self.display_width = 750
-        self.display_height = 600
+        self.scale_factor = 1
+        self.car_width = 75
+        self.car_height = 125
+        self.other_cars = [
+            OtherCar(self, random.randrange(230, 840), 0, random.randrange(1, 3), "pics/Lexus IS300.png"),
+            OtherCar(self, random.randrange(230, 840), -150, random.randrange(1, 3), "pics/mercedes-Benz CLK500.png"),
+            OtherCar(self, random.randrange(230, 840), -300, random.randrange(1, 3), "pics/image.png"),
+        ]
+        self.display_width = 1112
+        self.display_height = 800
         self.gray = (119, 119, 119)
         self.gamedisplay = pygame.display.set_mode(
             (self.display_width, self.display_height)
         )
         pygame.display.set_caption("Need For Sleep")
-        self.scale_factor = 1.2
-        self.car_width = 70
         self.gta = pygame.font.Font("pics/PricedownBl.ttf", 150)
         self.carimg = pygame.transform.scale(
-            pygame.image.load("pics/black3.png"),
+            pygame.image.load("pics/Audi A4.png"),
             (
                 int(self.car_width * self.scale_factor),
-                int(self.car_width * self.scale_factor),
+                int(self.car_height * self.scale_factor),
             ),
         )
         self.clock = pygame.time.Clock()
@@ -33,16 +70,16 @@ class Game:
         self.acceleration.set_volume(2)
 
         self.background_images = [
-            pygame.image.load("pics/road3.png"),
-            pygame.image.load("pics/road1.png"),
-            pygame.image.load("pics/road1.png"),
-            pygame.image.load("pics/road2.png"),
-            pygame.image.load("pics/road1.png"),
-            pygame.image.load("pics/road2.png"),
-            pygame.image.load("pics/road1.png"),
-            pygame.image.load("pics/road2.png"),
-            pygame.image.load("pics/road1.png"),
-            pygame.image.load("pics/road3.png"),
+            pygame.image.load("pics/road7.png"),
+            pygame.image.load("pics/road8.png"),
+            pygame.image.load("pics/road7.png"),
+            pygame.image.load("pics/road8.png"),
+            pygame.image.load("pics/road7.png"),
+            pygame.image.load("pics/road8.png"),
+            pygame.image.load("pics/road7.png"),
+            pygame.image.load("pics/road8.png"),
+            pygame.image.load("pics/road7.png"),
+            pygame.image.load("pics/end.png"),
         ]
         self.background_index = 0
         self.background_height = self.background_images[0].get_height()
@@ -52,8 +89,8 @@ class Game:
         self.render_text = self.gta.render("Wasted", 20, (0, 0, 0))
         self.level_text = self.myfont.render("Level-", 1, (0, 0, 0))
         self.background_speed = 5
-        self.x = 340
-        self.y = 320
+        self.x = (self.display_width / 2) - (self.car_width * self.scale_factor / 2)
+        self.y = self.display_height - 10- (self.car_height * self.scale_factor)
         self.x_change = 0
         self.passed = 0
         self.level = 0
@@ -62,6 +99,10 @@ class Game:
         self.prev_background_index = 1
         self.start_time = None
         self.background_y = 200 - self.display_height
+        
+    def get_car_rect(self):
+        return pygame.Rect(self.x, self.y, self.car_width * self.scale_factor, self.car_height * self.scale_factor)
+
 
     def background(self):
         self.background_y += self.background_speed
@@ -88,7 +129,7 @@ class Game:
         text = font.render(
             "Time elapsed = {:.1f}s".format(time_elapsed), True, (0, 0, 0)
         )
-        score = font.render("Score = " + str(self.score), True, (255, 0, 0))
+        self.score = font.render("Score = " + str(self.score), True, (255, 0, 0))
         self.gamedisplay.blit(text, (2, 2))
 
     def car(self):
@@ -96,11 +137,7 @@ class Game:
 
     def game_loop(self):
         while not self.bumped:
-            # self.acceleration.set_volume(5)
-            # self.acceleration.play()
             for event in pygame.event.get():
-                self.gamedisplay.fill(self.gray)
-                self.background()
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     self.bumped = True
@@ -116,26 +153,42 @@ class Game:
                 if event.type == pygame.KEYUP:
                     if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
                         self.x_change = 0
+                            
             self.x += self.x_change
             self.gamedisplay.fill(self.gray)
             self.background()
+
+            for car in self.other_cars:
+                car.move()
+                car.draw(self.gamedisplay)
+                if self.get_car_rect().colliderect(car.get_rect()):
+                    text_rect = self.render_text.get_rect(center=(self.display_width/2, self.display_height/2))
+                    self.gamedisplay.blit(self.render_text, text_rect)
+                    self.acceleration.stop()
+                    pygame.display.update()
+                    self.crashed.play()
+                    while pygame.mixer.get_busy():
+                        pygame.time.wait(50)
+                    pygame.quit()
+                    quit()
+
             self.car()
             self.score_system()
             pygame.display.update()
             self.clock.tick(90)
 
-            if self.x > 520 - self.car_width or self.x < 290 - self.car_width:
-                self.gamedisplay.blit(self.render_text, (120, 150))
+            if self.x > 849 - self.car_width or self.x < 228 - self.car_width:
+                text_rect = self.render_text.get_rect(center=(self.display_width/2, self.display_height/2))
+                self.gamedisplay.blit(self.render_text, text_rect)
                 self.acceleration.stop()
-                self.crashed.play()
                 pygame.display.update()
-                time.sleep(7)
-                # self.main_menu()
+                self.crashed.play()
+                while pygame.mixer.get_busy():
+                    pygame.time.wait(50)
                 pygame.quit()
-                # return 0
                 quit()
 
-            if self.background_index == len(self.background_images) - 1:
+            if self.background_index == len(self.background_images) - 1 and not self.bumped:
                 time_elapsed = (pygame.time.get_ticks() - self.start_time) / 1000
                 self.score = int(time_elapsed * 10)
                 self.background_speed = 0
@@ -163,8 +216,6 @@ class Game:
                 pygame.display.update()
                 time.sleep(5)
                 pygame.quit()
-                # return 1
-                # self.main_menu()
                 quit()
 
     def countdown(self):
@@ -178,10 +229,10 @@ class Game:
             )
             self.gamedisplay.blit(countdown_text, countdown_rect)
             pygame.display.update()
-            pygame.time.wait(1000)  # Wait for 1 second
+            pygame.time.wait(1000)
             count -= 1
-        self.start_time = pygame.time.get_ticks()  # Set the start time
-        self.clock.tick()  # Reset the game clock
+        self.start_time = pygame.time.get_ticks()
+        self.clock.tick()  
 
     def main_menu(self):
         menu_font = pygame.font.SysFont(None, 25)
